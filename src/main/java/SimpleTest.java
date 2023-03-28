@@ -13,9 +13,10 @@ import java.io.InputStream;
  */
 public class SimpleTest {
   public static void main(String[] args) throws IOException {
-    String resource = "my/mybatis-config.xml";
+    String resource = "mybatis-config.xml";
     InputStream inputStream = Resources.getResourceAsStream(resource);
     //创建SqlSessionFacory
+    // .build构建配置文件入口
     SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
     /******************************分割线******************************/
     SqlSession sqlSession = sqlSessionFactory.openSession();

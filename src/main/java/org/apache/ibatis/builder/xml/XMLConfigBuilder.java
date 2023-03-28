@@ -103,31 +103,59 @@ public class XMLConfigBuilder extends BaseBuilder {
   }
 
   public Configuration parse() {
+    // 判断是否解析过
     if (parsed) {
       throw new BuilderException("Each XMLConfigBuilder can only be used once.");
     }
     parsed = true;
+    // 解析 <configuration></configuration>标签内容，标签内容经过XPathParser解析，生成对象XNode
     parseConfiguration(parser.evalNode("/configuration"));
     return configuration;
   }
 
+  /** 以下分别解析各标签内容，然后再设置到configuration对象中，对照官网 https://mybatis.org/mybatis-3/zh/configuration.html
+   * properties（属性）
+   * settings（设置）
+   * typeAliases（类型别名）
+   * typeHandlers（类型处理器）
+   * objectFactory（对象工厂）
+   * plugins（插件）
+   * environments（环境配置）
+   * environment（环境变量）
+   * transactionManager（事务管理器）
+   * dataSource（数据源）
+   * databaseIdProvider（数据库厂商标识）
+   * mappers（映射器）
+   */
   private void parseConfiguration(XNode root) {
     try {
       // issue #117 read properties first
+      // 把properties标签属性值解析到configuration和XPathParser属性variables中
       propertiesElement(root.evalNode("properties"));
       Properties settings = settingsAsProperties(root.evalNode("settings"));
       loadCustomVfs(settings);
+      // 加载日志实现类
       loadCustomLogImpl(settings);
+      // 解析别名
       typeAliasesElement(root.evalNode("typeAliases"));
+      // 解析插件
       pluginElement(root.evalNode("plugins"));
+      // 每次 MyBatis 创建结果对象的新实例时，它都会使用一个对象工厂（ObjectFactory）实例来完成实例化工作。可以配置覆盖默认的
       objectFactoryElement(root.evalNode("objectFactory"));
       objectWrapperFactoryElement(root.evalNode("objectWrapperFactory"));
+      // 反射工厂 MyBatis 用于缓存 Reflector 的功能
       reflectorFactoryElement(root.evalNode("reflectorFactory"));
+      // 解析设置标签
       settingsElement(settings);
       // read it after objectFactory and objectWrapperFactory issue #631
+      // 环境配置（environments），配置数据源信息，也可配置多数据源，但是每个数据库对应一个 SqlSessionFactory 实例
       environmentsElement(root.evalNode("environments"));
+      // 数据库厂商标识（databaseIdProvider）根据不同的数据库标识，生成不同的SQL，比如Oracle sqlserver
       databaseIdProviderElement(root.evalNode("databaseIdProvider"));
+      // 类型处理器（typeHandlers）MyBatis 在设置预处理语句（PreparedStatement）中的参数或从结果集中取出一个值时，
+      // 都会用类型处理器将获取到的值以合适的方式转换成 Java 类型。这里可以重写已有的类型处理器或创建你自己的类型处理器来处理不支持的或非标准的类型
       typeHandlerElement(root.evalNode("typeHandlers"));
+      // 这里就是最关键的SQL映射语句了，解析mapper接口和mapper.xml，生成对应的MappedStatement
       mapperElement(root.evalNode("mappers"));
     } catch (Exception e) {
       throw new BuilderException("Error parsing SQL Mapper Configuration. Cause: " + e, e);
@@ -168,14 +196,19 @@ public class XMLConfigBuilder extends BaseBuilder {
     Class<? extends Log> logImpl = resolveClass(props.getProperty("logImpl"));
     configuration.setLogImpl(logImpl);
   }
-
-  private void typeAliasesElement(XNode parent) {
+/**
+ * 别名设置，解析完成之后最后放在TypeAliasRegistry类下的typeAliases属性中，
+ * 该属性就是一个hashmap  key=alias.toLowerCase(Locale.ENGLISH)别名小写。value=类型名称
+ */
+private void typeAliasesElement(XNode parent) {
     if (parent != null) {
       for (XNode child : parent.getChildren()) {
+        // 通过包名设置
         if ("package".equals(child.getName())) {
           String typeAliasPackage = child.getStringAttribute("name");
           configuration.getTypeAliasRegistry().registerAliases(typeAliasPackage);
         } else {
+          // 通过类名设置
           String alias = child.getStringAttribute("alias");
           String type = child.getStringAttribute("type");
           try {
@@ -196,11 +229,15 @@ public class XMLConfigBuilder extends BaseBuilder {
   private void pluginElement(XNode parent) throws Exception {
     if (parent != null) {
       for (XNode child : parent.getChildren()) {
+        // 获取到全限定名称
         String interceptor = child.getStringAttribute("interceptor");
+        // 插件对应的属性 property
         Properties properties = child.getChildrenAsProperties();
+        // 直接反射生成该插件
         Interceptor interceptorInstance = (Interceptor) resolveClass(interceptor).getDeclaredConstructor()
             .newInstance();
         interceptorInstance.setProperties(properties);
+        // 发到configuration对象中，其实放在了一个list中
         configuration.addInterceptor(interceptorInstance);
       }
     }
@@ -255,6 +292,10 @@ public class XMLConfigBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   * 设置属性设置，具体属性https://mybatis.org/mybatis-3/zh/configuration.html#settings
+   * 经常使用的有：设置日志实现类 logImpl 缓存设置cacheEnabled
+   */
   private void settingsElement(Properties props) {
     configuration
         .setAutoMappingBehavior(AutoMappingBehavior.valueOf(props.getProperty("autoMappingBehavior", "PARTIAL")));
