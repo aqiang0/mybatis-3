@@ -47,6 +47,7 @@ public class SqlSessionFactoryBuilder {
   public SqlSessionFactory build(Reader reader, String environment, Properties properties) {
     try {
       XMLConfigBuilder parser = new XMLConfigBuilder(reader, environment, properties);
+      // 解析mybatis-config.xml文件入口
       return build(parser.parse());
     } catch (Exception e) {
       throw ExceptionFactory.wrapException("Error building SqlSession.", e);
@@ -78,7 +79,7 @@ public class SqlSessionFactoryBuilder {
     try {
       // 加载mybatis-config.xml文件
       XMLConfigBuilder parser = new XMLConfigBuilder(inputStream, environment, properties);
-      // 1.0 解析配置文件
+      // 解析配置文件
       return build(parser.parse());
     } catch (Exception e) {
       throw ExceptionFactory.wrapException("Error building SqlSession.", e);

@@ -72,6 +72,7 @@ public class MapperRegistry {
         // mapper parser. If the type is already known, it won't try.
         // 解析mapper.xml
         MapperAnnotationBuilder parser = new MapperAnnotationBuilder(config, type);
+        // 解析mapper.xml文件入口  ↓↓↓
         parser.parse();
         loadCompleted = true;
       } finally {

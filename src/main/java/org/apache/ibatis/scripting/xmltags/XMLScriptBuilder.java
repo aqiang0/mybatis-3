@@ -72,7 +72,7 @@ public class XMLScriptBuilder extends BaseBuilder {
     }
     return sqlSource;
   }
-
+  // 循环解析动态标签 比如where标签，if标签
   protected MixedSqlNode parseDynamicTags(XNode node) {
     List<SqlNode> contents = new ArrayList<>();
     NodeList children = node.getNode().getChildNodes();

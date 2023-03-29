@@ -204,7 +204,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
     if (unresolvedCacheRef) {
       throw new IncompleteElementException("Cache-ref not yet resolved");
     }
-    // MappedStatement的id，是mapper.xml的Namespace+语句id；也就是mapper接口中全限定名称+方法名称
+    // MappedStatement的id，是mapper.xml的Namespace+语句id；也就是mapper接口中全限定名称+方法名称 比如 my.mapper.UserMapper.queryById
     id = applyCurrentNamespace(id, false);
 
     MappedStatement.Builder statementBuilder = new MappedStatement.Builder(configuration, id, sqlSource, sqlCommandType)
@@ -220,6 +220,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
     }
 
     MappedStatement statement = statementBuilder.build();
+    // 最后这条语句封装成MappedStatement，放在configuration对象的mappedStatements属性中，该属性就是一个map，key=上面的id
     configuration.addMappedStatement(statement);
     return statement;
   }

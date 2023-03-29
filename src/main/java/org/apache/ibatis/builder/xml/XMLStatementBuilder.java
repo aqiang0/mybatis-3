@@ -56,6 +56,7 @@ public class XMLStatementBuilder extends BaseBuilder {
   }
 
   public void parseStatementNode() {
+    // 标签id 比如 queryById
     String id = context.getStringAttribute("id");
     String databaseId = context.getStringAttribute("databaseId");
 
@@ -63,7 +64,7 @@ public class XMLStatementBuilder extends BaseBuilder {
       return;
     }
 
-    // 获取当前的标签名称
+    // 获取当前的标签名称 比如 select
     String nodeName = context.getNode().getNodeName();
     SqlCommandType sqlCommandType = SqlCommandType.valueOf(nodeName.toUpperCase(Locale.ENGLISH));
     // 是否select语句
@@ -99,11 +100,13 @@ public class XMLStatementBuilder extends BaseBuilder {
           configuration.isUseGeneratedKeys() && SqlCommandType.INSERT.equals(sqlCommandType))
               ? Jdbc3KeyGenerator.INSTANCE : NoKeyGenerator.INSTANCE;
     }
-    // 这里解析sql，总的来说就是把#{}换成？，把${}直接替换
+    // 这里解析sql，把语句中的where、if标签解析，封装到SqlSource
     SqlSource sqlSource = langDriver.createSqlSource(configuration, context, parameterTypeClass);
+    // 以下属性获取，可参照 https://mybatis.org/mybatis-3/zh/sqlmap-xml.html#select-1
     StatementType statementType = StatementType
         .valueOf(context.getStringAttribute("statementType", StatementType.PREPARED.toString()));
     Integer fetchSize = context.getIntAttribute("fetchSize");
+    // 驱动程序等待数据库返回请求结果的秒数
     Integer timeout = context.getIntAttribute("timeout");
     String parameterMap = context.getStringAttribute("parameterMap");
     String resultType = context.getStringAttribute("resultType");
@@ -117,6 +120,7 @@ public class XMLStatementBuilder extends BaseBuilder {
     if (resultSetTypeEnum == null) {
       resultSetTypeEnum = configuration.getDefaultResultSetType();
     }
+    // 这些属性对应insert, update 和 delete标签 https://mybatis.org/mybatis-3/zh/sqlmap-xml.html#insert-update-%E5%92%8C-delete
     String keyProperty = context.getStringAttribute("keyProperty");
     String keyColumn = context.getStringAttribute("keyColumn");
     String resultSets = context.getStringAttribute("resultSets");

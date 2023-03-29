@@ -113,14 +113,17 @@ public class MapperAnnotationBuilder {
   }
 
   public void parse() {
+    // 开始解析 mapper.xml文件
     String resource = type.toString();
     // 判断是否加载了该xml文件
     if (!configuration.isResourceLoaded(resource)) {
-      // 加载该mapper.xml
+      // 加载该mapper.xml并且解析 这里进去↓↓↓
       loadXmlResource();
       configuration.addLoadedResource(resource);
       assistant.setCurrentNamespace(type.getName());
+      // 解析缓存标签，也设置到configuration对象caches属性中
       parseCache();
+      //  引用其它命名空间的缓存配置
       parseCacheRef();
       for (Method method : type.getMethods()) {
         if (!canHaveStatement(method)) {
@@ -131,6 +134,7 @@ public class MapperAnnotationBuilder {
           parseResultMap(method);
         }
         try {
+          // 这里是解析mapper接口上通过注解写的SQL
           parseStatement(method);
         } catch (IncompleteElementException e) {
           configuration.addIncompleteMethod(new MethodResolver(this, method));
@@ -165,7 +169,7 @@ public class MapperAnnotationBuilder {
     // to prevent loading again a resource twice
     // this flag is set at XMLMapperBuilder#bindMapperForNamespace
     if (!configuration.isResourceLoaded("namespace:" + type.getName())) {
-      // xml路径，比如在我的resource目录下 com/aqiang/mybatis/mapper/UserMapper.xml
+      // xml路径，比如在我的resource目录下 my/mapper/UserMapper.xml
       String xmlResource = type.getName().replace('.', '/') + ".xml";
       // #1347
       InputStream inputStream = type.getResourceAsStream("/" + xmlResource);
@@ -181,7 +185,7 @@ public class MapperAnnotationBuilder {
         // xml解析器解析生成XMLMapperBuilder
         XMLMapperBuilder xmlParser = new XMLMapperBuilder(inputStream, assistant.getConfiguration(), xmlResource,
             configuration.getSqlFragments(), type.getName());
-        // 解析mapper.xml
+        // 解析mapper.xml ↓↓↓
         xmlParser.parse();
       }
     }
