@@ -423,8 +423,10 @@ private void typeAliasesElement(XNode parent) {
 
   private void mapperElement(XNode parent) throws Exception {
     if (parent != null) {
+      // mapper映射器的写法 package、resource、url、class优先级从高到低
       for (XNode child : parent.getChildren()) {
         if ("package".equals(child.getName())) {
+          // 解析package写法mapper
           String mapperPackage = child.getStringAttribute("name");
           configuration.addMappers(mapperPackage);
         } else {

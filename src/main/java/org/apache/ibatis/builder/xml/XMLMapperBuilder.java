@@ -97,6 +97,7 @@ public class XMLMapperBuilder extends BaseBuilder {
 
   public void parse() {
     if (!configuration.isResourceLoaded(resource)) {
+      // 解析mapper标签
       configurationElement(parser.evalNode("/mapper"));
       configuration.addLoadedResource(resource);
       bindMapperForNamespace();
@@ -113,16 +114,23 @@ public class XMLMapperBuilder extends BaseBuilder {
 
   private void configurationElement(XNode context) {
     try {
+      // 获取namespace属性值
       String namespace = context.getStringAttribute("namespace");
       if (namespace == null || namespace.isEmpty()) {
         throw new BuilderException("Mapper's namespace cannot be empty");
       }
+      // 绑定当前解析的namespace值
       builderAssistant.setCurrentNamespace(namespace);
+      // 解析缓存配置表标签，这里是二级缓存 官网文档：https://mybatis.org/mybatis-3/zh/sqlmap-xml.html#%E7%BC%93%E5%AD%98
       cacheRefElement(context.evalNode("cache-ref"));
       cacheElement(context.evalNode("cache"));
+      // parameterMap – 老式风格的参数映射。此元素已被废弃，并可能在将来被移除！请使用行内参数映射
       parameterMapElement(context.evalNodes("/mapper/parameterMap"));
+      // 解析结果映射
       resultMapElements(context.evalNodes("/mapper/resultMap"));
+      // 解析sql标签，可重用的 SQL 代码片段
       sqlElement(context.evalNodes("/mapper/sql"));
+      // 解析真正的SQL语句
       buildStatementFromContext(context.evalNodes("select|insert|update|delete"));
     } catch (Exception e) {
       throw new BuilderException("Error parsing Mapper XML. The XML location is '" + resource + "'. Cause: " + e, e);
@@ -141,8 +149,10 @@ public class XMLMapperBuilder extends BaseBuilder {
       final XMLStatementBuilder statementParser = new XMLStatementBuilder(configuration, builderAssistant, context,
           requiredDatabaseId);
       try {
+        // 解析生成MappedStatement
         statementParser.parseStatementNode();
       } catch (IncompleteElementException e) {
+        // 这里是前面顺序解析时，无法解析的在这里重新解析一次
         configuration.addIncompleteStatement(statementParser);
       }
     }
@@ -208,13 +218,19 @@ public class XMLMapperBuilder extends BaseBuilder {
 
   private void cacheElement(XNode context) {
     if (context != null) {
+      // 自定义缓存时，指定的缓存类型
       String type = context.getStringAttribute("type", "PERPETUAL");
       Class<? extends Cache> typeClass = typeAliasRegistry.resolveAlias(type);
+      // 缓存清除策略
       String eviction = context.getStringAttribute("eviction", "LRU");
       Class<? extends Cache> evictionClass = typeAliasRegistry.resolveAlias(eviction);
+      // 缓存刷新间隔，默认没有，是调用语句是刷新
       Long flushInterval = context.getLongAttribute("flushInterval");
+      // 引用数目
       Integer size = context.getIntAttribute("size");
+      // 缓存是否只读
       boolean readWrite = !context.getBooleanAttribute("readOnly", false);
+      // TODO 2023/3/28 17:07:28 mapper缓存属性blocking 待解决
       boolean blocking = context.getBooleanAttribute("blocking", false);
       Properties props = context.getChildrenAsProperties();
       builderAssistant.useNewCache(typeClass, evictionClass, flushInterval, size, readWrite, blocking, props);
@@ -247,8 +263,11 @@ public class XMLMapperBuilder extends BaseBuilder {
       builderAssistant.addParameterMap(id, parameterClass, parameterMappings);
     }
   }
-
-  private void resultMapElements(List<XNode> list) {
+/**
+ * 这里大概就是 遍历mapper标签下的所有resultMap,解析生成ResultMap对象，然后把该对象设置给
+ * configuration对象的resultMaps对象中，key=id,vaule=ResultMap
+ */
+private void resultMapElements(List<XNode> list) {
     for (XNode resultMapNode : list) {
       try {
         resultMapElement(resultMapNode);
@@ -265,19 +284,24 @@ public class XMLMapperBuilder extends BaseBuilder {
   private ResultMap resultMapElement(XNode resultMapNode, List<ResultMapping> additionalResultMappings,
       Class<?> enclosingType) {
     ErrorContext.instance().activity("processing " + resultMapNode.getValueBasedIdentifier());
+    // 获取映射类型
     String type = resultMapNode.getStringAttribute("type", resultMapNode.getStringAttribute("ofType",
         resultMapNode.getStringAttribute("resultType", resultMapNode.getStringAttribute("javaType"))));
+    // 获取class类型
     Class<?> typeClass = resolveClass(type);
     if (typeClass == null) {
       typeClass = inheritEnclosingType(resultMapNode, enclosingType);
     }
     Discriminator discriminator = null;
     List<ResultMapping> resultMappings = new ArrayList<>(additionalResultMappings);
+    // 获取resultMap下的所有子节点
     List<XNode> resultChildren = resultMapNode.getChildren();
     for (XNode resultChild : resultChildren) {
+      // 构造器constructor映射属性
       if ("constructor".equals(resultChild.getName())) {
         processConstructorElement(resultChild, typeClass, resultMappings);
       } else if ("discriminator".equals(resultChild.getName())) {
+        // 鉴别器 没用过...
         discriminator = processDiscriminatorElement(resultChild, typeClass, resultMappings);
       } else {
         List<ResultFlag> flags = new ArrayList<>();

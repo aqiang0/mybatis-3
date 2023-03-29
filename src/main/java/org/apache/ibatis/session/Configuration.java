@@ -888,6 +888,7 @@ public class Configuration {
   }
 
   public void addMappers(String packageName) {
+    // 属性mapperRegistry其实也只有一个关键属性knownMappers，就是一个map，值类型做了包装MapperProxyFactory，后面代理生成方便↓↓↓
     mapperRegistry.addMappers(packageName);
   }
 

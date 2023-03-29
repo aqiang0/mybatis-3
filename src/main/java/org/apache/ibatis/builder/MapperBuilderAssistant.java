@@ -204,7 +204,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
     if (unresolvedCacheRef) {
       throw new IncompleteElementException("Cache-ref not yet resolved");
     }
-
+    // MappedStatement的id，是mapper.xml的Namespace+语句id；也就是mapper接口中全限定名称+方法名称
     id = applyCurrentNamespace(id, false);
 
     MappedStatement.Builder statementBuilder = new MappedStatement.Builder(configuration, id, sqlSource, sqlCommandType)

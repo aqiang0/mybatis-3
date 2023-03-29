@@ -114,7 +114,9 @@ public class MapperAnnotationBuilder {
 
   public void parse() {
     String resource = type.toString();
+    // 判断是否加载了该xml文件
     if (!configuration.isResourceLoaded(resource)) {
+      // 加载该mapper.xml
       loadXmlResource();
       configuration.addLoadedResource(resource);
       assistant.setCurrentNamespace(type.getName());
@@ -163,6 +165,7 @@ public class MapperAnnotationBuilder {
     // to prevent loading again a resource twice
     // this flag is set at XMLMapperBuilder#bindMapperForNamespace
     if (!configuration.isResourceLoaded("namespace:" + type.getName())) {
+      // xml路径，比如在我的resource目录下 com/aqiang/mybatis/mapper/UserMapper.xml
       String xmlResource = type.getName().replace('.', '/') + ".xml";
       // #1347
       InputStream inputStream = type.getResourceAsStream("/" + xmlResource);
@@ -175,8 +178,10 @@ public class MapperAnnotationBuilder {
         }
       }
       if (inputStream != null) {
+        // xml解析器解析生成XMLMapperBuilder
         XMLMapperBuilder xmlParser = new XMLMapperBuilder(inputStream, assistant.getConfiguration(), xmlResource,
             configuration.getSqlFragments(), type.getName());
+        // 解析mapper.xml
         xmlParser.parse();
       }
     }
