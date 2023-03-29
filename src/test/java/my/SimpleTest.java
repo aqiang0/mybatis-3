@@ -1,3 +1,6 @@
+package my;
+
+import my.mapper.UserMapper;
 import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
@@ -13,18 +16,15 @@ import java.io.InputStream;
  */
 public class SimpleTest {
   public static void main(String[] args) throws IOException {
-    String resource = "mybatis-config.xml";
+    String resource = "my/mybatis-config.xml";
     InputStream inputStream = Resources.getResourceAsStream(resource);
-    //创建SqlSessionFacory
-    // .build构建配置文件入口
+    //创建SqlSessionFacory  .build构建配置文件入口
     SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
-    /******************************分割线******************************/
     SqlSession sqlSession = sqlSessionFactory.openSession();
-    Object mapper = sqlSession.getMapper(Object.class);
     //获取Mapper
-    //UserDao mapper = sqlSession.getMapper(UserDao.class);
-    //System.out.println(mapper.queryById(1L));
-    sqlSession.close();
+    UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+    System.out.println(mapper.queryById(1L));
     sqlSession.commit();
+    sqlSession.close();
   }
 }
