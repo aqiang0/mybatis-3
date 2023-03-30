@@ -152,6 +152,7 @@ public class XMLMapperBuilder extends BaseBuilder {
    * @return void
    */
   private void buildStatementFromContext(List<XNode> list, String requiredDatabaseId) {
+    // 遍历增删改查标签，进行解析
     for (XNode context : list) {
       // 取出其中一个sql标签构造XMLStatementBuilder，主要是带上configuration对象
       final XMLStatementBuilder statementParser = new XMLStatementBuilder(configuration, builderAssistant, context,

@@ -63,18 +63,22 @@ public class XMLScriptBuilder extends BaseBuilder {
   }
 
   public SqlSource parseScriptNode() {
+    // 解析动态标签
     MixedSqlNode rootSqlNode = parseDynamicTags(context);
     SqlSource sqlSource;
     if (isDynamic) {
+      // 动态标签，先不动
       sqlSource = new DynamicSqlSource(configuration, rootSqlNode);
     } else {
+      // 不是动态的，直接把#{}换成？ 比如： select * from user where id = #{id}  ==>  select * from user where id = ?
       sqlSource = new RawSqlSource(configuration, rootSqlNode, parameterType);
     }
     return sqlSource;
   }
-  // 循环解析动态标签 比如where标签，if标签
+  // 再循环解析动态标签 比如where标签，if标签
   protected MixedSqlNode parseDynamicTags(XNode node) {
     List<SqlNode> contents = new ArrayList<>();
+    // 获取所有的子标签，比如where、if、foreach
     NodeList children = node.getNode().getChildNodes();
     for (int i = 0; i < children.getLength(); i++) {
       XNode child = node.newXNode(children.item(i));
@@ -82,12 +86,14 @@ public class XMLScriptBuilder extends BaseBuilder {
         String data = child.getStringBody("");
         TextSqlNode textSqlNode = new TextSqlNode(data);
         if (textSqlNode.isDynamic()) {
+          // 动态SQL
           contents.add(textSqlNode);
           isDynamic = true;
         } else {
           contents.add(new StaticTextSqlNode(data));
         }
       } else if (child.getNode().getNodeType() == Node.ELEMENT_NODE) { // issue #628
+        // 这里解析where、if、foreach之类动态拼接SQL的标签
         String nodeName = child.getNode().getNodeName();
         NodeHandler handler = nodeHandlerMap.get(nodeName);
         if (handler == null) {

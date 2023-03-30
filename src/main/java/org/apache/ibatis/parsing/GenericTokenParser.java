@@ -34,7 +34,7 @@ public class GenericTokenParser {
     if (text == null || text.isEmpty()) {
       return "";
     }
-    // search open token
+    // search open token 解析静态SQL时，openToken = #{    closeToken = }
     int start = text.indexOf(openToken);
     if (start == -1) {
       return text;
@@ -73,6 +73,7 @@ public class GenericTokenParser {
           builder.append(src, start, src.length - start);
           offset = src.length;
         } else {
+          // 关键替换在这个handler，静态SQL这里的handler是前面new进来的ParameterMappingTokenHandler，handleToken方法把字符换成？
           builder.append(handler.handleToken(expression.toString()));
           offset = end + closeToken.length();
         }
